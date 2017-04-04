@@ -240,7 +240,13 @@ cor.test(winedf$quality, sqrt(winedf$alcohol))
 
 # Bivariate Analysis
 
+While not exactly what I expected, the pH of the wine is related to fixed acid content, while not the citric or volatile. Without getting to much into the chemistry, this makes sense because checking the variable descriptions we can see that the fixed acidity related to the tartaric acid content and volalitile the acetic acid. Then of the three acids: tartaric, citric, and acetic, tartaric is the strongest and has the highest concentration in the wine of the three, it should have the largest effect on the pH. 
 
+One of the other suprising things about this data set was the relative lack of trends for the various variables and quality. When I started this investigation I assumed that most of the variables would have a sweet spot where quality was optimized but so far only alcohol content has really shown any trend. Which I guess isn't that suprising, inhebreated people tend to rate things better than they would while sober so a higher alcohol content might shift peoples perceptions. 
+
+I am starting to wonder aboout how this study was conducted though. Were the already familiar with wines or did they accept anyone into the study? Then, was it one wine per participant? Or were they given multiple wines in one sitting? I could imagine that there would be a bias for either the intial or final tastings if this is the case. 
+
+Anyways, hopefully with the additon of more variables we can start to see definite trends so we can build a more accurate model. 
 
 > **Tip**: As before, summarize what you found in your bivariate explorations
 here. Use the questions below to guide your discussion.
