@@ -1,9 +1,5 @@
-TITLE by YOUR_NAME_HERE
-========================================================
-
-> **Tip**: You will see quoted sections like this throughout the template to
-help you construct your report. Make sure that you remove these notes before
-you finish and submit your project!
+Quality Analyis of White Wines by Chemical Make-up by Joe Amlung
+================================================================
 
 > **Tip**: One of the requirements of this project is that your code follows
 good formatting techniques, including limiting your lines to 80 characters or
@@ -24,20 +20,22 @@ a margin line to help you keep track of this guideline!
 # want it to. This will clean up the flow of your report.
 
 library(ggplot2)
+library(knitr)
+library(scales)
+library(GGally)
+library(plyr)
 ```
 
 ```{r echo=FALSE, Load_the_Data}
 # Load the Data
-
+winedf <- read.csv('wineQualityWhites.csv')
 ```
 
-> **Tip**: Before you create any plots, it is a good idea to provide a short
-introduction into the dataset that you are planning to explore. Replace this
-quoted text with that general information!
+> This is an expoloratory report interested in the quality of different white wines based on their chemical make-up. The data was published by Cortez, et. al. in 2009 in their paper Wine Quality.
 
 # Univariate Plots Section
 
-> **Tip**: In this section, you should perform some preliminary exploration of
+> In this section, you should perform some preliminary exploration of
 your dataset. Run some summaries of the data and create univariate plots to
 understand the structure of the individual variables in your dataset. Don't
 forget to add a comment after each plot or closely-related group of plots!
@@ -45,34 +43,105 @@ There should be multiple code chunks and text sections; the first one below is
 just to help you get started.
 
 ```{r echo=FALSE, Univariate_Plots}
+summary(winedf)
+```
+
+> The summary data shows a much larger range of of values for many of the variables than I would expect. For example, the minimum sulfur dioxide is 9 (mg / dm^3) and the max is 440 (mg / dm^3), I would of initally expected the range to be much smaller. 
+
+```{r echo = FALSE, Univarite_Plots}
+str(winedf)
+```
+
+```{r echo = FALSE, Univarite_Plots}
+fixed_acidity <- ggplot(aes(x = fixed.acidity), data = winedf) + 
+  geom_histogram()
+volatile_acidity <- ggplot(aes(x = volatile.acidity), data = winedf) + 
+  geom_histogram()
+citric_acid <- ggplot(aes(x = citric.acid), data = winedf) + 
+  geom_histogram()
+residual_sugar <- ggplot(aes(x = residual.sugar), data = winedf) + 
+  geom_histogram()
+chlorides <- ggplot(aes(x = chlorides), data = winedf) + 
+  geom_histogram()
+free_sulfur <- ggplot(aes(x = free.sulfur.dioxide), data = winedf) + 
+  geom_histogram()
+total_sulfur <- ggplot(aes(x = total.sulfur.dioxide), data = winedf) + 
+  geom_histogram()
+pH <- ggplot(aes(x = pH), data = winedf) + 
+  geom_histogram()
+density <- ggplot(aes(x = density), data = winedf) + 
+  geom_histogram()
+sulphates <- ggplot(aes(x = sulphates), data = winedf) + 
+  geom_histogram()
+alcohol <- ggplot(aes(x = alcohol), data = winedf) + 
+  geom_histogram()
+quality <- ggplot(aes(x = quality), data = winedf) + 
+  geom_histogram() 
+grid.arrange(fixed_acidity, volatile_acidity, citric_acid, residual_sugar, chlorides, free_sulfur, total_sulfur, pH, density, sulphates, alcohol, quality)
 
 ```
 
-> **Tip**: Make sure that you leave a blank line between the start / end of
-each code block and the end / start of your Markdown text so that it is
-formatted nicely in the knitted text. Note as well that text on consecutive
-lines is treated as a single space. Make sure you have a blank line between
-your paragraphs so that they too are formatted for easy readability.
+> The data, in general, has a fairly normal distrubution amongst the varibables, the noted exception being alcohol content. There are some interesting points in the intial graphs through: there is a large spike in residual sugar and sulphates looks like it could have a potential bi-modal distribution.
+
+```{r echo = FALSE, Univarite_Plots}
+ggplot(aes(x = residual.sugar), data = winedf) +
+  geom_histogram(binwidth = 0.5, color = 'black', fill = '#099DD9') + 
+  scale_x_continuous(breaks = seq(0,30,1), limits = c(0,30))+
+  ggtitle('Count of Residual Sugar Levels', )
+```
+
+> Playing around with the bin widths, the residual sugar content looks like it is actually long-tailed.
+
+```{r echo  FALSE, Univarite_plots}
+ggplot(aes(x = alcohol), data = winedf) +
+  geom_histogram(binwidth = 0.05, color = 'black', fill = '#099DD9') + 
+  scale_x_sqrt() +
+  ggtitle('Count of the Square Root of Alchol Content Levels') +
+  labs(x = 'Total Alcohol Content')
+``` 
+> if we transform the alcohol data by taking the square root, we start to see that it also has some long-tail characteristics.
+
+```{r echo = FALSE Univariate_plots}
+ggplot(aes(x = sulphates), data = winedf) +
+  geom_histogram(binwidth = 0.01, color = 'black', fill = '#099DD9') 
+```
+
+> Changing the binwidth allows us to see that sulphate content actually has a fairly normal distribution as well, albeit with some outliers
+
+> To make the quality data easier to work with, I'm going to split it into 4 categories bases on the quarter percentiles. It should be noted that the distribution isn't going to be perfect since the bulk of the data has a rating of 6. Another significant digit in quality would of helped this issue significatantly. 
+
+```{r echo = True, Univariate_plots}
+
+cond <- winedf$quality < 5
+winedf$quality_class <- ifelse(cond, 'Poor', 'High')
+cond <- winedf$quality == 5
+winedf$quality_class <- ifelse(cond, 'Medium-low', winedf$quality_class)
+cond <- winedf$quality == 6
+winedf$quality_class <- ifelse(cond, 'Medium-high', winedf$quality_class)
+```
+
+> Now that we can facet wrap or color the variables with the quality class. I'm interested to know if the large spike in the residual sugar plot is from a specific class or not. Here is the same plot shown earlier but with fill set to quality_class
+
+```{r echo = FALSE, Univariate_plots}
+ggplot(aes(x = residual.sugar, fill = quality_class), data = winedf) + 
+  geom_histogram(binwidth = 0.5, color = 'black') + 
+  scale_x_continuous(breaks = seq(0,30,1), limits = c(0,30)) +
+  ggtitle('Count of Residual Sugar Levels by Quality_Class') +
+  scale_color_brewer(type = 'qual')
+```
+
+>Looks like my hunch of the spike in residual sugar being tied to quality was wrong, looks lie that a variable indepdent of quality. 
+
 
 # Univariate Analysis
 
-> **Tip**: Now that you've completed your univariate explorations, it's time to
-reflect on and summarize what you've found. Use the questions below to help you
-gather your observations and add your own if you have other thoughts!
+The data set is orginally structured with 4898 observations of 12 variables. 11 of those variables are chemical properties related to a specific white wine. One of the more interesting things about this data set is the conformity and the shape of the distribution.
 
-### What is the structure of your dataset?
+For the most part, there are actually very few outliers. Most of the properties are normally distributed and the tails cut off relatively quickly. This is probably due to wine being unpalletable with extreme chemical properties or it changes the classfication of the wine (white to red for example). There were a few noted properties that do not take on a normal distribution: sugar and alcohol content both appear to be long tailed. To obtain the tal for the alcohol content though, a square root transformation was performed to reduce some of the larger spikes in the data set.
 
-### What is/are the main feature(s) of interest in your dataset?
+My guess is that due to the relative uniformity of the data, that a potential accurate model should be able to be constructed to determine the quality rating of the wine. However, I have heard that wine tastings are very subjective and not scientific, so it will be interesting to see if quality is something that can be modeled. Another thing that would be intresting to check out is how much some of the chemical properties relate to eachother. For example, as someone with a chemistry background, I know that larger acid values should lead to a lower pH so I'm curious if that is indeed true or if something is "soaking? them up, leaving the pH unaffected. 
 
-### What other features in the dataset do you think will help support your \
-investigation into your feature(s) of interest?
-
-### Did you create any new variables from existing variables in the dataset?
-
-### Of the features you investigated, were there any unusual distributions? \
-Did you perform any operations on the data to tidy, adjust, or change the form \
-of the data? If so, why did you do this?
-
+A new variable was created, quality_class, which will allow easier interpretation as to whether other variables are having some effect on the quality rating of the wine. 
 
 # Bivariate Plots Section
 
