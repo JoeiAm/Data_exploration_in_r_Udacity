@@ -1,10 +1,5 @@
-Quality Analyis of White Wines by Chemical Make-up by Joe Amlung
+Quality Analysis of White Wines by Chemical Make-up by Joe Amlung
 ================================================================
-
-> **Tip**: One of the requirements of this project is that your code follows
-good formatting techniques, including limiting your lines to 80 characters or
-less. If you're using RStudio, go into Preferences \> Code \> Display to set up
-a margin line to help you keep track of this guideline!
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
 # Load all of the packages that you end up using in your analysis in this code
@@ -24,6 +19,8 @@ library(knitr)
 library(scales)
 library(GGally)
 library(plyr)
+library(alr3)
+
 ```
 
 ```{r echo=FALSE, Load_the_Data}
@@ -130,39 +127,127 @@ ggplot(aes(x = residual.sugar, fill = quality_class), data = winedf) +
   scale_color_brewer(type = 'qual')
 ```
 
->Looks like my hunch of the spike in residual sugar being tied to quality was wrong, looks lie that a variable indepdent of quality. 
+>Looks like my hunch of the spike in residual sugar being tied to quality was wrong, looks lie that a variable independent of quality. 
 
 
 # Univariate Analysis
 
-The data set is orginally structured with 4898 observations of 12 variables. 11 of those variables are chemical properties related to a specific white wine. One of the more interesting things about this data set is the conformity and the shape of the distribution.
+The data set is originally structured with 4898 observations of 12 variables. 11 of those variables are chemical properties related to a specific white wine. One of the more interesting things about this data set is the conformity and the shape of the distribution.
 
-For the most part, there are actually very few outliers. Most of the properties are normally distributed and the tails cut off relatively quickly. This is probably due to wine being unpalletable with extreme chemical properties or it changes the classfication of the wine (white to red for example). There were a few noted properties that do not take on a normal distribution: sugar and alcohol content both appear to be long tailed. To obtain the tal for the alcohol content though, a square root transformation was performed to reduce some of the larger spikes in the data set.
+For the most part, there are actually very few outliers. Most of the properties are normally distributed and the tails cut off relatively quickly. This is probably due to wine being unpalatable with extreme chemical properties or it changes the classification of the wine (white to red for example). There were a few noted properties that do not take on a normal distribution: sugar and alcohol content both appear to be long tailed. To obtain the tail for the alcohol content though, a square root transformation was performed to reduce some of the larger spikes in the data set.
 
-My guess is that due to the relative uniformity of the data, that a potential accurate model should be able to be constructed to determine the quality rating of the wine. However, I have heard that wine tastings are very subjective and not scientific, so it will be interesting to see if quality is something that can be modeled. Another thing that would be intresting to check out is how much some of the chemical properties relate to eachother. For example, as someone with a chemistry background, I know that larger acid values should lead to a lower pH so I'm curious if that is indeed true or if something is "soaking? them up, leaving the pH unaffected. 
+My guess is that due to the relative uniformity of the data, that a potential accurate model should be able to be constructed to determine the quality rating of the wine. However, I have heard that wine tastings are very subjective and not scientific, so it will be interesting to see if quality is something that can be modeled. Another thing that would be interesting to check out is how much some of the chemical properties relate to each other. For example, as someone with a chemistry background, I know that larger acid values should lead to a lower pH so I'm curious if that is indeed true or if something is "soaking? them up, leaving the pH unaffected. 
 
 A new variable was created, quality_class, which will allow easier interpretation as to whether other variables are having some effect on the quality rating of the wine. 
 
+I'm suspecting that many of the variables in this data set are interconnected, making non-univariate plots and analysis very interesting. 
+
 # Bivariate Plots Section
 
-> **Tip**: Based on what you saw in the univariate plots, what relationships
-between variables might be interesting to look at in this section? Don't limit
-yourself to relationships between a main output feature and one of the
-supporting variables. Try to look at relationships between supporting variables
-as well.
-
-```{r echo=FALSE, Bivariate_Plots}
-
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = fixed.acidity, y = volatile.acidity), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0))+
+  ggtitle('Fixed Acidity vs Volatile Acidity') 
 ```
 
+> Not really a relation ship between volatile and fixed acidity. I thought that they might be correlated (or inversely correlated).
+
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = pH, y = citric.acid), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('pH vs Citric Acid Content')
+```
+
+> Not what I was expecting. I thought that with increasing citric acid content, the pH should decrease but it appears that there are acually horizontal trends in the data. Now lets check the trend with volatile acidity, pH is a a measure of acidity, so that should show a trend. 
+
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = pH, y = volatile.acidity), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('pH vs Volatile Acidity')
+```
+
+> No trend again! Maybe because the acid is volatile it's already reacted (no longer affecting the pH) and they're measuring the reacted molecules. To test this, we need to do the same thing with fixed acidity because those chemicals should be fixed (unreacted).
+
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = pH, y = fixed.acidity), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('pH vs Fixed Acidity')
+```
+
+> Finally! As you can see there is a definite negative trend with fixed acidy and pH. This makes sense because pH is the measure of free acid moleules and the more there are in the system, the lower  the pH. Now I'm curious to see what happens when we color the same plot by quality_class:
+
+```{r echo = FALSE, bivarite_plots}
+ggplot(aes(x = pH, y = fixed.acidity, color = quality_class), data = winedf) +
+  geom_point(alpha = 0.5, position = position_jitter(h = 0)) +
+  ggtitle('pH vs Fixed Acidity with Quality_Class') +
+  scale_color_brewer(type = 'div')
+```
+
+> No real realtionship between quality and acidity. My goal is to find quality trends so I need to keep exploring. Maybe there is a relationship with sulfates. From now on I'll also plot quality vs a variable, not quality_class
+
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = quality, y = sulphates), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('Quality vs Sulphates')
+```
+
+> No luck here, lets try free sulfur dioxide
+
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = quality, y = free.sulfur.dioxide), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('Quality vs Free Sulfur Dioxide') +
+  ylim(0, 150)
+```
+
+> There might be a slight trend here. It looks like higher quality wines might have higher sulfur dioxide contents, we can calculate the r value to give us a better idea. 
+
+```{r echo = TRUE, bivarite_plots}
+cor.test(winedf$quality, winedf$free.sulfur.dioxide)
+```
+
+> Upon further analysis, it doesn't look like that has any effect either. I'm starting to wonder if looking at individual chemicals is the wrong was to go about this, maybe total chemical content is what matters? I can check this by adding another column in the df. To make things easier, I'll only add variables that have the units g / dm ^ 3 (excluding density)
+
+```{r echo = True, Bivariate_plots}
+winedf$chemical.content <- winedf$fixed.acidity + winedf$volatile.acidity + winedf$citric.acid + winedf$residual.sugar + winedf$chlorides + winedf$sulphates
+summary(winedf$chemical.content)
+```
+
+Now that chemical.content is added, it can be plotted vs quality. 
+
+```{r echo= False, Bivariate_plots}
+ggplot(aes(x = quality, y = chemical.content), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('Quality vs Chemical Content') +
+  ylim(0, 40)
+```
+
+> Nothing here either. I haven't checked if alcohol content is related to quality yet, so that is worth checking.
+
+```{r echo = FALSE, bivariate_plots}
+ggplot(aes(x = quality, y = sqrt(alcohol)), data = winedf) +
+  geom_point(alpha = 0.2, position = position_jitter(h = 0)) +
+  ggtitle('Quality vs Alcohol Content') 
+```
+
+> Finally, looks like there's a correlation here! Now lets check the r value:
+
+```{r echo = False, bivariate_plots}
+cor.test(winedf$quality, sqrt(winedf$alcohol))
+```
+
+>While not the greatest, with a r value of .43, there is some correlation between alcohol and quality. Just a note, this was done on the square root of alchol to give it more of a normal distribution as was determined in the univarite section. 
+
 # Bivariate Analysis
+
+
 
 > **Tip**: As before, summarize what you found in your bivariate explorations
 here. Use the questions below to guide your discussion.
 
 ### Talk about some of the relationships you observed in this part of the \
 investigation. How did the feature(s) of interest vary with other features in \
-the dataset?
+the data set?
 
 ### Did you observe any interesting relationships between the other features \
 (not the main feature(s) of interest)?
@@ -199,7 +284,7 @@ strengths and limitations of your model.
 # Final Plots and Summary
 
 > **Tip**: You've done a lot of exploration and have built up an understanding
-of the structure of and relationships between the variables in your dataset.
+of the structure of and relationships between the variables in your data set.
 Here, you will select three plots from all of your previous exploration to
 present here as a summary of some of your most interesting findings. Make sure
 that you have refined your selected plots for good titling, axis labels (with
@@ -236,7 +321,7 @@ make sure you justify why you chose each plot by describing what it shows.
 > **Tip**: Here's the final step! Reflect on the exploration you performed and
 the insights you found. What were some of the struggles that you went through?
 What went well? What was surprising? Make sure you include an insight into
-future work that could be done with the dataset.
+future work that could be done with the data set.
 
 > **Tip**: Don't forget to remove this, and the other **Tip** sections before
 saving your final work and knitting the final report!
